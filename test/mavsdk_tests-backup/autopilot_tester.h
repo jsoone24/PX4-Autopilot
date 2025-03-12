@@ -55,21 +55,6 @@
 #include <optional>
 #include <thread>
 
-//=============================================================================
-#include <gazebo/transport/transport.hh>
-#include <gazebo/msgs/msgs.hh>
-#include <gazebo/common/common.hh>
-#include <gazebo/gazebo_client.hh>
-#include "Groundtruth.pb.h"
-#include <boost/shared_array.hpp>
-
-
-#define TIMEOUT1 std::chrono::seconds(60)	// Timeout for 1 minute
-#define TIMEOUT3 std::chrono::seconds(180)	// Timeout for 3 minutes
-#define TIMEOUT5 std::chrono::seconds(300)	// Timeout for 5 minutes
-#define TIMEOUT10 std::chrono::seconds(600)	// Timeout for 10 minutes
-//=============================================================================
-
 extern std::string connection_url;
 extern std::optional<float> speed_factor;
 
@@ -116,7 +101,7 @@ public:
 	/**
 	 * @brief Wait until vehicle's system status is healthy & is able to arm
 	 */
-	void wait_until_ready(float MPC_XY_CRUISE = 5.0f);
+	void wait_until_ready();
 
 	void store_home();
 	void check_home_within(float acceptance_radius_m);
@@ -166,20 +151,10 @@ public:
 	void send_custom_mavlink_command(const MavlinkPassthrough::CommandInt &command);
 	void send_custom_mavlink_message(mavlink_message_t &message);
 	void add_mavlink_message_callback(uint16_t message_id, std::function< void(const mavlink_message_t &)> callback);
+
 	void enable_fixedwing_mectrics();
 	void check_airspeed_is_valid();
 	void check_airspeed_is_invalid();
-
-
-	// ====================================================================================================
-	void crash_detector(std::chrono::seconds timeout_duration = std::chrono::seconds(-1));
-	void print_bias_time();
-	void execute_mission_no_wait();
-	void orbit(float radius_m, float velocity_ms);
-	void takeoff_and_wait_for_mission_sequence(int sequence_number);
-	void custom_fly_forward_in_posctl(float altitude);
-	void custom_fly_forward_in_altctl(float altitude);
-	// ====================================================================================================
 
 	// Blocking call to get the drone's current position in NED frame
 	std::array<float, 3> get_current_position_ned();

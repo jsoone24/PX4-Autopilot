@@ -89,7 +89,7 @@ class Runner:
 
     def seconds(self) -> str:
         dt = time.time() - self.start_time
-        return "{: 8.04f}".format(dt)
+        return "{: 8.03f}".format(dt)
 
     def poll(self) -> Optional[int]:
         return self.process.poll()
