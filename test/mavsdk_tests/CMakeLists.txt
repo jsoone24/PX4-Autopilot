@@ -30,10 +30,10 @@ if(MAVSDK_FOUND AND gazebo_FOUND)
 	test_multicopter_constspeed_y.cpp
 	test_multicopter_constspeed_z.cpp
         test_multicopter_20m_normal.cpp
-	#test_multicopter_20m.cpp
-	#test_multicopter_40m.cpp
-	#test_multicopter_80m.cpp
-	#test_multicopter_120m.cpp
+	test_multicopter_20m.cpp
+	test_multicopter_40m.cpp
+	test_multicopter_80m.cpp
+	test_multicopter_120m.cpp
         ${GROUNDTRUTH_PROTO_SRCS}
         ${GROUNDTRUTH_PROTO_HDRS}
     )
