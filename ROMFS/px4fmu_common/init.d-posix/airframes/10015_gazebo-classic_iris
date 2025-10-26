@@ -9,7 +9,6 @@
 
 . ${R}etc/init.d/rc.mc_defaults
 
-
 param set-default CA_AIRFRAME 0
 
 param set-default CA_ROTOR_COUNT 4

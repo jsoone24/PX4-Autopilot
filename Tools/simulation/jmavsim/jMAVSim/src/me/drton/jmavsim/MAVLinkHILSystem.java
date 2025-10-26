@@ -227,8 +227,7 @@ public class MAVLinkHILSystem extends MAVLinkHILSystemBase {
             msg_hil_state.set("pitchspeed", (float) v3d.y);
             msg_hil_state.set("yawspeed", (float) v3d.z);
 
-            int alt = (int)(1000 * vehicle.position.z);
-            msg_hil_state.set("alt", alt);
+            msg_hil_state.set("alt", (double)(sensors.getGlobalPosition().alt * 1000));
             msg_hil_state.set("lat", (int)(sensors.getGlobalPosition().lat * 1.e7));
             msg_hil_state.set("lon", (int)(sensors.getGlobalPosition().lon * 1.e7));
 

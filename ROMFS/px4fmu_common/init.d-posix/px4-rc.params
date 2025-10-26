@@ -3,3 +3,16 @@
 
 #param set-default MAV_SYS_ID $((px4_instance+1))
 #param set-default IMU_INTEG_RATE 250
+
+param set-default COM_ACT_FAIL_ACT 0
+param set-default COM_FLTT_LOW_ACT 1
+param set-default COM_IMB_PROP_ACT 0
+param set-default COM_LOW_BAT_ACT 0
+param set-default COM_OBL_RC_ACT 5
+#param set-default COM_POS_LOW_ACT 1
+param set-default COM_QC_ACT -1
+param set-default COM_WIND_MAX_ACT 1
+param set-default NAV_DLL_ACT 1
+param set-default NAV_RCL_ACT 1
+param set-default GF_ACTION 1
+param set-default SDLOG_MODE -1

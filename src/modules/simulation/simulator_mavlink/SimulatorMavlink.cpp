@@ -510,6 +510,35 @@ void SimulatorMavlink::handle_message_hil_sensor(const mavlink_message_t *msg)
 
 	last_time = now_us;
 #endif
+	// direct mavlink type update
+	/*
+	float x_bias = gyro_bias_x;
+	float y_bias = gyro_bias_y;
+	float z_bias = gyro_bias_z;
+	*/
+	// uORB type update
+	gyro_bias_s gyro_bias;
+	_gyro_bias_sub.copy(&gyro_bias);
+
+	x_bias = gyro_bias.gyro_bias_x;
+	y_bias = gyro_bias.gyro_bias_y;
+	z_bias = gyro_bias.gyro_bias_z;
+
+	//PX4_INFO("Gyro bias updated: x: %.6f, y: %.6f, z: %.6f", (double)x_bias, (double)y_bias, (double)z_bias);
+
+	// param type update
+	/*
+	int32_t _raw_gyro_bias_xy = _param_sim_gyro_bias_xy.get();
+	int16_t x_scaled = (int16_t)(_raw_gyro_bias_xy >> 16);
+	int16_t y_scaled = (int16_t)(_raw_gyro_bias_xy & 0xFFFF);
+	float x_bias = (float)x_scaled / 100000.0f;
+	float y_bias = (float)y_scaled / 100000.0f;
+	*/
+	//std::printf("x_bias: %f, y_bias: %f\n", x_bias, y_bias);
+
+	imu.xgyro += x_bias;
+	imu.ygyro += y_bias;
+	imu.zgyro += z_bias;
 
 	update_sensors(now_us, imu);
 

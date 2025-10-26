@@ -117,6 +117,7 @@ set(msg_files
 	GpsDump.msg
 	GpsInjectData.msg
 	Gripper.msg
+	GyroBias.msg
 	HealthReport.msg
 	HeaterStatus.msg
 	HomePosition.msg

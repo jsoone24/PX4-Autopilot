@@ -280,6 +280,10 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_statustext(msg);
 		break;
 
+	case MAVLINK_MSG_ID_SET_GYRO_BIAS:
+		handle_message_gyro_bias(msg);
+		break;
+
 #if !defined(CONSTRAINED_FLASH)
 
 	case MAVLINK_MSG_ID_NAMED_VALUE_FLOAT:
@@ -758,6 +762,21 @@ MavlinkReceiver::handle_message_command_ack(mavlink_message_t *msg)
 			PX4_WARN("Got unsuccessful result %" PRIu8 " from camera", ack.result);
 		}
 	}
+}
+
+void
+MavlinkReceiver::handle_message_gyro_bias(mavlink_message_t *msg)
+{
+	mavlink_set_gyro_bias_t gyro_bias;
+	mavlink_msg_set_gyro_bias_decode(msg, &gyro_bias);
+
+	gyro_bias_s gyro_bias_msg{};
+	gyro_bias_msg.timestamp = hrt_absolute_time();
+	gyro_bias_msg.gyro_bias_x = gyro_bias.gyro_bias_x;
+	gyro_bias_msg.gyro_bias_y = gyro_bias.gyro_bias_y;
+	gyro_bias_msg.gyro_bias_z = gyro_bias.gyro_bias_z;
+
+	_gyro_bias_pub.publish(gyro_bias_msg);
 }
 
 void

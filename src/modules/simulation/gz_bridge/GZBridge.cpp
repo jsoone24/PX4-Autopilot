@@ -239,7 +239,15 @@ int GZBridge::init()
 		PX4_ERR("failed to init motor output");
 		return PX4_ERROR;
 	}
+	// ==============================================================================================================================
+	std::string gyro_bias_topic = "/world/" + _world_name + "/model/" + _model_name + "/gyro_bias";
 
+	if (!_node.Subscribe(gyro_bias_topic, &GZBridge::gyroBiasCallback, this))
+	{
+		PX4_ERR("---------failed to sub service to %s--------------", gyro_bias_topic.c_str());
+		return PX4_ERROR;
+	}
+	// ==============================================================================================================================
 	ScheduleNow();
 	return OK;
 }
@@ -502,16 +510,25 @@ void GZBridge::imuCallback(const gz::msgs::IMU &imu)
 	sensor_gyro.timestamp = hrt_absolute_time();
 #endif
 	sensor_gyro.device_id = 1310988; // 1310988: DRV_IMU_DEVTYPE_SIM, BUS: 1, ADDR: 1, TYPE: SIMULATION
-	sensor_gyro.x = gyro_b.X();
-	sensor_gyro.y = gyro_b.Y();
-	sensor_gyro.z = gyro_b.Z();
+	sensor_gyro.x = gyro_b.X()+ gyrobias.X();
+	sensor_gyro.y = gyro_b.Y()+ gyrobias.Y();
+	sensor_gyro.z = gyro_b.Z()+ gyrobias.Z();
 	sensor_gyro.temperature = NAN;
 	sensor_gyro.samples = 1;
 	_sensor_gyro_pub.publish(sensor_gyro);
 
 	pthread_mutex_unlock(&_node_mutex);
 }
+// =============================================================================================================================
+void GZBridge::gyroBiasCallback(const gz::msgs::Vector3d &msg)
+{
+    gyrobias.X() = msg.x();
+    gyrobias.Y() = msg.y();
+    gyrobias.Z() = msg.z();
 
+    std::printf("Gyro bias set via topic: x=%.3f y=%.3f z=%.3f\n",(double)msg.x(), (double)msg.y(), (double)msg.z());
+}
+// ==============================================================================================================================
 void GZBridge::poseInfoCallback(const gz::msgs::Pose_V &pose)
 {
 	if (hrt_absolute_time() == 0) {
