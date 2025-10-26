@@ -48,12 +48,15 @@ AutopilotTester::AutopilotTester() :
 	report_speed_factor();
 })
 {
+	gazebo::client::setup();
 }
 
 AutopilotTester::~AutopilotTester()
 {
 	_should_exit = true;
 	_real_time_report_thread.join();
+
+	gazebo::client::shutdown();
 }
 
 void AutopilotTester::connect(const std::string uri)
@@ -79,7 +82,7 @@ void AutopilotTester::connect(const std::string uri)
 	_mavlink_passthrough.reset(new MavlinkPassthrough(system));
 }
 
-void AutopilotTester::wait_until_ready()
+void AutopilotTester::wait_until_ready(float MPC_XY_CRUISE)
 {
 	std::cout << time_str() << "Waiting for system to be ready (system health ok & able to arm)" << std::endl;
 
@@ -95,8 +98,16 @@ void AutopilotTester::wait_until_ready()
 	// when the vehicle considers global position to be valid, it will then allow arming
 
 	// Wait until we can arm
-	CHECK(poll_condition_with_timeout(
-	[this]() {	return _telemetry->health().is_armable;	}, std::chrono::seconds(20)));
+	// CHECK(poll_condition_with_timeout( [this]() {	return _telemetry->health().is_armable;	}, std::chrono::seconds(45)));
+	CHECK(poll_condition_with_timeout( [this]() {	return _telemetry->health().is_armable;	}, TIMEOUT3));
+
+
+	// ========================================================================
+	_param->set_param_float("MPC_LAND_SPEED", 0.3);
+	_param->set_param_float("MPC_XY_VEL_MAX", 20.0);
+	_param->set_param_float("MPC_XY_CRUISE", MPC_XY_CRUISE);
+	// ========================================================================
+
 }
 
 void AutopilotTester::store_home()
@@ -271,9 +282,16 @@ void AutopilotTester::execute_mission()
 	REQUIRE(poll_condition_with_timeout(
 	[this]() { return _mission->start_mission() == Mission::Result::Success; }, std::chrono::seconds(3)));
 
-	// TODO: Adapt time limit based on mission size, flight speed, sim speed factor, etc.
+	float speed_factor = 1.0f;
 
-	wait_for_mission_finished(std::chrono::seconds(90));
+	if (_info != nullptr) {
+		speed_factor = _info->get_speed_factor().second;
+	}
+
+	const float mission_finish_waiting_time_in_simulation_s = 500.f;
+	float mission_finish_waiting_time_in_real_s = mission_finish_waiting_time_in_simulation_s / speed_factor;
+
+	wait_for_mission_finished(std::chrono::seconds(static_cast<int>(mission_finish_waiting_time_in_real_s)));
 }
 
 void AutopilotTester::execute_mission_and_lose_gps()
@@ -388,9 +406,16 @@ void AutopilotTester::execute_mission_raw()
 {
 	REQUIRE(_mission->start_mission() == Mission::Result::Success);
 
-	// TODO: Adapt time limit based on mission size, flight speed, sim speed factor, etc.
+	float speed_factor = 1.0f;
 
-	wait_for_mission_raw_finished(std::chrono::seconds(120));
+	if (_info != nullptr) {
+		speed_factor = _info->get_speed_factor().second;
+	}
+
+	const float waiting_time_simulation_time_s = 300.f; // currently this is tuned for the VTOL wind test
+	float waiting_time_absolute_s = waiting_time_simulation_time_s / speed_factor;
+
+	wait_for_mission_raw_finished(std::chrono::seconds(static_cast<int>(waiting_time_absolute_s)));
 }
 
 void AutopilotTester::execute_rtl()
@@ -438,8 +463,29 @@ void AutopilotTester::fly_forward_in_posctl()
 	}
 
 	CHECK(_manual_control->start_position_control() == ManualControl::Result::Success);
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
 	store_home();
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
 	wait_until_ready();
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
 	arm();
 
 	// Climb up for 5 seconds
@@ -476,9 +522,36 @@ void AutopilotTester::fly_forward_in_altctl()
 	}
 
 	CHECK(_manual_control->start_altitude_control() == ManualControl::Result::Success);
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
 	store_home();
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
 	wait_until_ready();
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
 	arm();
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
 
 	// Climb up for 5 seconds
 	for (unsigned i = 0; i < 5 * manual_control_rate_hz; ++i) {
@@ -979,4 +1052,298 @@ void AutopilotTester::check_airspeed_is_invalid()
 	const Telemetry::FixedwingMetrics &metrics = getTelemetry()->fixedwing_metrics();
 	std::cout << "Reported airspeed after failure: " << metrics.airspeed_m_s ;
 	REQUIRE(!std::isfinite(metrics.airspeed_m_s));
+}
+
+// ====================================================================================================
+// Threshold
+const double MAX_ATTITUDE_RAD = 0.1745;		// 10 degrees
+const double MAX_ANGULAR_VELOCITY_RAD = 0.2;    // rad/s
+const double MAX_HORIZONTAL_VELOCITY = 0.1;  	// m/s
+const double MAX_VERTICAL_VELOCITY = 0.4;    	// m/s
+
+// GroundtruthData structure
+struct GroundtruthData {
+	double attitude_q_w = 1.0;
+	double attitude_q_x = 0.0;
+	double attitude_q_y = 0.0;
+	double attitude_q_z = 0.0;
+	double velocity_east = 0.0;
+	double velocity_north = 0.0;
+	double velocity_up = 0.0;
+};
+
+GroundtruthData current_groundtruth;
+std::mutex groundtruth_mutex;
+typedef const boost::shared_ptr<const sensor_msgs::msgs::Groundtruth> GtPtr;
+
+// TelemetryData structure
+struct TelemetryData {
+	double angular_velocity_x = 0.0;
+	double angular_velocity_y = 0.0;
+	double angular_velocity_z = 0.0;
+};
+
+TelemetryData current_telemetry;
+std::mutex telemetry_mutex;
+
+// Other global variables
+std::atomic<bool> first_contact_processed(false);
+
+// Quaternion to Euler Angle (radian) function
+void QuaternionToEuler(double q_w, double q_x, double q_y, double q_z, double &roll, double &pitch, double &yaw)
+{
+	roll  = std::atan2(2.0 * (q_w * q_x + q_y * q_z), 1 - 2.0 * (q_x * q_x + q_y * q_y));
+	pitch = std::asin(2.0 * (q_w * q_y - q_z * q_x));
+	yaw   = std::atan2(2.0 * (q_w * q_z + q_x * q_y), 1 - 2.0 * (q_y * q_y + q_z * q_z));
+}
+
+// Groundtruth callback function
+void groundtruthCallback(GtPtr &msg_any)
+{
+	std::lock_guard<std::mutex> lock(groundtruth_mutex);
+	current_groundtruth.attitude_q_w = msg_any->attitude_q_w();
+	current_groundtruth.attitude_q_x = msg_any->attitude_q_x();
+	current_groundtruth.attitude_q_y = msg_any->attitude_q_y();
+	current_groundtruth.attitude_q_z = msg_any->attitude_q_z();
+	current_groundtruth.velocity_east = msg_any->velocity_east();
+	current_groundtruth.velocity_north = msg_any->velocity_north();
+	current_groundtruth.velocity_up = msg_any->velocity_up();
+}
+
+// Angular Velocity Telemetry callback function
+void angularVelocityCallback(const mavsdk::Telemetry::AngularVelocityBody &angular_velocity)
+{
+	std::lock_guard<std::mutex> lock(telemetry_mutex);
+	current_telemetry.angular_velocity_x = angular_velocity.roll_rad_s;
+	current_telemetry.angular_velocity_y = angular_velocity.pitch_rad_s;
+	current_telemetry.angular_velocity_z = angular_velocity.yaw_rad_s;
+}
+
+// Gazebo contact callback function
+void contactCallback(ConstContactsPtr &msg)
+{
+	for (int i = 0; i < msg->contact_size(); ++i) {
+		first_contact_processed = true;
+	}
+}
+
+
+// Attitude Stability Checker based on Groundtruth
+bool isAttitudeStableUsingGT()
+{
+	std::lock_guard<std::mutex> lock(groundtruth_mutex);
+	double roll, pitch, yaw;
+	QuaternionToEuler(current_groundtruth.attitude_q_w,
+			  current_groundtruth.attitude_q_x,
+			  current_groundtruth.attitude_q_y,
+			  current_groundtruth.attitude_q_z,
+			  roll, pitch, yaw);
+
+	return (std::abs(roll) < MAX_ATTITUDE_RAD && std::abs(pitch) < MAX_ATTITUDE_RAD);
+}
+
+bool isYawStableUsingTelemetry()
+{
+	std::lock_guard<std::mutex> lock(telemetry_mutex);
+	return (std::abs(current_telemetry.angular_velocity_z) < MAX_ANGULAR_VELOCITY_RAD);
+}
+
+// Horizontal Velocity Stability Checker based on Groundtruth
+bool isHorizontalVelocityStableUsingGT()
+{
+	std::lock_guard<std::mutex> lock(groundtruth_mutex);
+	return (std::abs(current_groundtruth.velocity_east) < MAX_HORIZONTAL_VELOCITY &&
+		std::abs(current_groundtruth.velocity_north) < MAX_HORIZONTAL_VELOCITY);
+}
+
+bool isVerticalVelocityStableUsingGT()
+{
+	std::lock_guard<std::mutex> lock(groundtruth_mutex);
+	return (std::abs(current_groundtruth.velocity_up) < MAX_VERTICAL_VELOCITY);
+}
+
+// Better crash_detector function
+void AutopilotTester::crash_detector(std::chrono::seconds timeout_duration)
+{
+	// Gazebo contact 및 groundtruth 토픽 구독 설정
+	gazebo::transport::NodePtr node(new gazebo::transport::Node());
+	node->Init();
+	auto contact_sub = node->Subscribe("/gazebo/default/physics/contacts", contactCallback);
+	auto gt_sub = node->Subscribe("/gazebo/default/iris/groundtruth", groundtruthCallback);
+	_telemetry->subscribe_attitude_angular_velocity_body(angularVelocityCallback);
+
+	//timeout start time & duration
+	const int64_t start_time_us = _telemetry->attitude_quaternion().timestamp_us;
+	const std::chrono::microseconds duration_us(timeout_duration);
+
+	// 첫번째 contact 이벤트가 발생하거나 timeout 때까지 대기
+	while (!first_contact_processed) {
+		gazebo::common::Time::MSleep(10);
+
+		const int64_t elapsed_time_us = _telemetry->attitude_quaternion().timestamp_us - start_time_us;
+
+		if (duration_us.count() > 0 && elapsed_time_us > duration_us.count()) {
+			std::cout << time_str() << "Timeout, connected to vehicle but waiting for test for " << static_cast<double>
+				  (elapsed_time_us) / 1e6 << " seconds\n";
+			REQUIRE(false);
+		}
+	}
+
+	// 구독 해제 및 종료 정리
+	contact_sub->Unsubscribe();
+	gt_sub->Unsubscribe();
+	node->Fini();
+	gazebo::transport::fini();
+
+	auto odometry = _telemetry->odometry();
+	uint32_t time_boot_ms = odometry.time_usec / 1000;
+	bool attitudeStable = isAttitudeStableUsingGT();
+	bool yawStable = isYawStableUsingTelemetry();
+	bool horVelocityStable = isHorizontalVelocityStableUsingGT();
+	bool verVelocityStable = isVerticalVelocityStableUsingGT();
+
+	std::cout << "[INFO] Contact detected time from boot: " << time_boot_ms << std::endl;
+	std::cout << "[INFO] Groundtruth-based attitude stable: " << (attitudeStable ? "yes" : "no") << std::endl;
+	std::cout << "[INFO] Telemetry-based yaw stable: " << (yawStable ? "yes" : "no") << std::endl;
+	std::cout << "[INFO] Groundtruth-based horizontal velocity stable: " << (horVelocityStable ? "yes" : "no") << std::endl;
+	std::cout << "[INFO] Groundtruth-based vertical velocity stable: " << (verVelocityStable ? "yes" : "no") << std::endl;
+
+
+	if (attitudeStable && yawStable && horVelocityStable && verVelocityStable) {
+		std::cout << "[INFO] 정상 착륙 (stable landing)" << std::endl;
+		REQUIRE(true);
+
+	} else {
+		std::cout << "[INFO] Crash 감지 (crash detected)" << std::endl;
+		REQUIRE(false);
+	}
+}
+
+void AutopilotTester::execute_mission_no_wait()
+{
+	REQUIRE(_mission->start_mission() == Mission::Result::Success);
+}
+
+void AutopilotTester::orbit(float radius_m, float velocity_ms)
+{
+	Telemetry::Position current_pos = _telemetry->position();
+	CHECK(std::isfinite(current_pos.latitude_deg));
+	CHECK(std::isfinite(current_pos.longitude_deg));
+	CHECK(std::isfinite(current_pos.absolute_altitude_m));
+	Action::OrbitYawBehavior yaw_behavior = Action::OrbitYawBehavior::HoldFrontToCircleCenter;
+
+	const auto result = _action->do_orbit(radius_m, velocity_ms, yaw_behavior, current_pos.latitude_deg,
+					      current_pos.longitude_deg, current_pos.absolute_altitude_m);
+	REQUIRE(result == Action::Result::Success);
+}
+
+void AutopilotTester::takeoff_and_wait_for_mission_sequence(int sequence_number)
+{
+	auto prom = std::promise<void> {};
+	auto fut = prom.get_future();
+
+	_mission->subscribe_mission_progress([&prom, this, sequence_number](Mission::MissionProgress progress) {
+		std::cout << time_str() << "Progress: " << progress.current << "/" << progress.total << std::endl;
+
+		if (progress.current >= sequence_number) {
+			_mission->subscribe_mission_progress(nullptr);
+			prom.set_value();
+		}
+	});
+
+	REQUIRE(_mission->start_mission() == Mission::Result::Success);
+
+	REQUIRE(fut.wait_for(std::chrono::seconds(60)) == std::future_status::ready);
+}
+
+void AutopilotTester::custom_fly_forward_in_posctl(float altitude)
+{
+	const unsigned manual_control_rate_hz = 50;
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
+	CHECK(_manual_control->start_position_control() == ManualControl::Result::Success);
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
+	store_home();
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
+	wait_until_ready();
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
+	arm();
+	set_takeoff_altitude(altitude);
+	takeoff();
+	wait_until_hovering();
+
+	// Fly forward for 10 seconds
+	for (unsigned i = 0; i < 10 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.5f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+}
+
+void AutopilotTester::custom_fly_forward_in_altctl(float altitude)
+{
+	const unsigned manual_control_rate_hz = 50;
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
+	CHECK(_manual_control->start_altitude_control() == ManualControl::Result::Success);
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
+	store_home();
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
+	wait_until_ready();
+
+	// Send something to make sure RC is available.
+	for (unsigned i = 0; i < 1 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
+
+	arm();
+	set_takeoff_altitude(altitude);
+	takeoff();
+	wait_until_hovering();
+
+	// Fly forward for 10 seconds
+	for (unsigned i = 0; i < 10 * manual_control_rate_hz; ++i) {
+		CHECK(_manual_control->set_manual_control_input(0.5f, 0.f, 0.5f, 0.f) == ManualControl::Result::Success);
+		sleep_for(std::chrono::milliseconds(1000 / manual_control_rate_hz));
+	}
 }

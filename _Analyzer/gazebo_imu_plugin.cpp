@@ -41,17 +41,17 @@ GazeboImuPlugin::~GazeboImuPlugin() {
 
 
 //================================================================================================
-std::mutex log_mutex;
-
 void GazeboImuPlugin::OnGyroBiasMsg(ConstVector3dPtr &msg) {
     // Update the gyro bias
-    gyro_bias_.Set(msg->x(), msg->y(), msg->z());
-    is_gyro_bias_updated = true;
+    this->gyro_bias_.Set(msg->x(), msg->y(), msg->z());
+    this->is_gyro_bias_updated = true;
+    std::cout << "[GAZEBO INFO] Gyro Bias Updated {" << "x: " << msg->x() << ", y: " <<  msg->y() << ", z: " << msg->z() << "}" << std::endl;
 }
+
 
 void GazeboImuPlugin::OnAccelBiasMsg(ConstVector3dPtr &msg) {
     // Update the accel bias
-    accel_bias_.Set(msg->x(), msg->y(), msg->z());
+    this->accel_bias_.Set(msg->x(), msg->y(), msg->z());
 }
 //================================================================================================
 
@@ -75,16 +75,17 @@ void GazeboImuPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
 
   //================================================================================================
   // Subscribe to the gyro bias topic
-  gyro_bias_sub_ = node_handle_->Subscribe("~/" + model_->GetName() + "/gyro_bias", &GazeboImuPlugin::OnGyroBiasMsg, this);
+  this->gyro_bias_sub_ = node_handle_->Subscribe("~/gyro_bias", &GazeboImuPlugin::OnGyroBiasMsg, this);
+
   // Initialize bias to zero
-  gyro_bias_ = ignition::math::Vector3d::Zero;
+  this->gyro_bias_ = ignition::math::Vector3d::Zero;
 
 
   // Subscribe to the accel bias topic
-  accel_bias_sub_ = node_handle_->Subscribe("~/" + model_->GetName() + "/accel_bias", &GazeboImuPlugin::OnAccelBiasMsg, this);
+  this->accel_bias_sub_ = node_handle_->Subscribe("~/accel_bias", &GazeboImuPlugin::OnAccelBiasMsg, this);
 
   // Initialize bias to zero
-  accel_bias_ = ignition::math::Vector3d::Zero;
+  this->accel_bias_ = ignition::math::Vector3d::Zero;
   //================================================================================================
 
 
@@ -330,35 +331,21 @@ void GazeboImuPlugin::OnUpdate(const common::UpdateInfo& _info) {
   gazebo::msgs::Vector3d* linear_acceleration = new gazebo::msgs::Vector3d();
 
   //================================================================================================
-  linear_acceleration->set_x(linear_acceleration_I[0] + accel_bias_[0]);
-  linear_acceleration->set_y(linear_acceleration_I[1] + accel_bias_[1]);
-  linear_acceleration->set_z(linear_acceleration_I[2] + accel_bias_[2]);
+  linear_acceleration->set_x(linear_acceleration_I[0] + this->accel_bias_[0]);
+  linear_acceleration->set_y(linear_acceleration_I[1] + this->accel_bias_[1]);
+  linear_acceleration->set_z(linear_acceleration_I[2] + this->accel_bias_[2]);
   //================================================================================================
 
   // Copy Eigen::Vector3d to gazebo::msgs::Vector3d
   gazebo::msgs::Vector3d* angular_velocity = new gazebo::msgs::Vector3d();
-
   //================================================================================================
-  angular_velocity->set_x(angular_velocity_I[0] + gyro_bias_[0]);
-  angular_velocity->set_y(angular_velocity_I[1] + gyro_bias_[1]);
-  angular_velocity->set_z(angular_velocity_I[2] + gyro_bias_[2]);
+  angular_velocity->set_x(angular_velocity_I[0] + this->gyro_bias_[0]);
+  angular_velocity->set_y(angular_velocity_I[1] + this->gyro_bias_[1]);
+  angular_velocity->set_z(angular_velocity_I[2] + this->gyro_bias_[2]);
 
-  if (is_gyro_bias_updated){
-	std::lock_guard<std::mutex> lock(log_mutex);
-
-	std::printf("[GAZEBO INFO] Gyro Bias Updated SimTime: %lu\n",
-		static_cast<unsigned long>(_info.simTime.sec) * 1000000UL + _info.simTime.nsec / 1000);
-
-	std::printf("[GAZEBO INFO] Gyro Bias Updated {x: %.6f, y: %.6f, z: %.6f}\n",
-		gyro_bias_[0], gyro_bias_[1], gyro_bias_[2]);
-
-	fflush(stdout);
-
-	//std::cout << "[GAZEBO INFO] Gyro Bias Updated {" << "x: " << msg->x() << ", y: " <<  msg->y() << ", z: " << msg->z() << "}" << std::endl;
-
-	//std::cout << "[GAZEBO INFO] Gyro Bias Updated SimTime: " << _info.simTime.sec * 1000000 + _info.simTime.nsec / 1000 <<  std::endl;
-
-	is_gyro_bias_updated = false;
+  if (this->is_gyro_bias_updated){
+	std::cout << "[GAZEBO INFO] Gyro Bias Updated SimTime: " << _info.simTime.sec * 1000000 + _info.simTime.nsec / 1000 <<  std::endl;
+	this->is_gyro_bias_updated = false;
   }
   //================================================================================================
 

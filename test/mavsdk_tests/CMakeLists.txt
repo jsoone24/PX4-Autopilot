@@ -12,36 +12,46 @@ string(STRIP ${MAVSDK_VERSION} MAVSDK_VERSION)
 find_package(MAVSDK "${MAVSDK_VERSION}" REQUIRED)
 find_package(Threads REQUIRED)
 
-if(MAVSDK_FOUND)
+# find gazebo
+find_package(gazebo REQUIRED)
+
+# find protobuf
+find_package(Protobuf REQUIRED)
+
+# Groundtruth proto 파일 위치
+set(GROUNDTRUTH_PROTO ${CMAKE_CURRENT_SOURCE_DIR}/msgs/Groundtruth.proto)
+protobuf_generate_cpp(GROUNDTRUTH_PROTO_SRCS GROUNDTRUTH_PROTO_HDRS ${GROUNDTRUTH_PROTO})
+
+if(MAVSDK_FOUND AND gazebo_FOUND)
     add_executable(mavsdk_tests
-        test_main.cpp
         autopilot_tester.cpp
-        autopilot_tester_failure.cpp
-        autopilot_tester_rtl.cpp
-        autopilot_tester_figure_eight.cpp
-        # follow-me needs a MAVSDK update:
-        # https://github.com/mavlink/MAVSDK/pull/1770
-        # autopilot_tester_follow_me.cpp
-        test_multicopter_control_allocation.cpp
-        test_multicopter_failure_injection.cpp
-        test_multicopter_failsafe.cpp
-        test_multicopter_mission.cpp
-        test_multicopter_offboard.cpp
-        test_multicopter_manual.cpp
-        test_vtol_mission.cpp
-        test_vtol_figure_eight.cpp
-        test_vtol_rtl.cpp
-        test_vtol_mission_wind.cpp
-        test_vtol_loiter_airspeed_failure_blockage.cpp
-        # test_multicopter_follow_me.cpp
+        test_main.cpp
+	test_multicopter_constspeed_x.cpp
+	test_multicopter_constspeed_y.cpp
+	test_multicopter_constspeed_z.cpp
+
+        #test_multicopter_20m_normal.cpp
+	#test_multicopter_20m.cpp
+	#test_multicopter_40m.cpp
+	#test_multicopter_80m.cpp
+	#test_multicopter_120m.cpp
+        ${GROUNDTRUTH_PROTO_SRCS}
+        ${GROUNDTRUTH_PROTO_HDRS}
     )
 
     target_link_libraries(mavsdk_tests
         MAVSDK::mavsdk
         ${CMAKE_THREAD_LIBS_INIT}
+        ${GAZEBO_LIBRARIES}                 # Gazebo libraries
+        ${Protobuf_LIBRARIES}
     )
 
-    target_include_directories(mavsdk_tests PUBLIC ${CMAKE_BINARY_DIR}/..)
+    target_include_directories(mavsdk_tests PUBLIC
+        ${CMAKE_BINARY_DIR}/..
+        ${GAZEBO_INCLUDE_DIRS}              # Gazebo headers
+        ${Protobuf_INCLUDE_DIRS}
+	${CMAKE_CURRENT_BINARY_DIR}
+    )
 
     target_compile_options(mavsdk_tests
         PRIVATE

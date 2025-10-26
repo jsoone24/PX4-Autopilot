@@ -393,6 +393,9 @@ class Tester:
                 self.get_combined_log(logfile_path))
             self.upload_log(ulog_file, test['model'], case, is_success)
 
+
+        os.system("sed -r 's/\x1B\[[0-9;]*[mK]//g' " + logfile_path + " > " + logfile_path + "_plain.log")
+
         return is_success
 
     def start_runners(self,
@@ -577,6 +580,7 @@ class Tester:
     def stop_combined_log(self) -> None:
         if self.log_fd:
             self.log_fd.close()
+
 
     def add_to_combined_log(self, output: str) -> None:
         self.log_fd.write(output)
