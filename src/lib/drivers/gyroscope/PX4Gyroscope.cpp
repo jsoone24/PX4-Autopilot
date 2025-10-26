@@ -37,7 +37,22 @@
 #include <lib/drivers/device/Device.hpp>
 #include <lib/parameters/param.h>
 
+#if defined(__PX4_NUTTX)
+# include <nuttx/irq.h>
+#endif
+
 using namespace time_literals;
+
+namespace
+{
+// Global variables for external bias injection
+// Shared by ALL PX4Gyroscope instances
+// Initialized to zero, updated via SetExternalBias() from MAVLink
+// Protected by critical section on NuttX (IRQ disable) for thread-safety
+float g_external_bias_x{0.f};
+float g_external_bias_y{0.f};
+float g_external_bias_z{0.f};
+}
 
 static constexpr int32_t sum(const int16_t samples[], uint8_t len)
 {
@@ -113,21 +128,33 @@ void PX4Gyroscope::set_scale(float scale)
 
 void PX4Gyroscope::update(const hrt_abstime &timestamp_sample, float x, float y, float z)
 {
-	// Apply rotation (before scaling)
+	// Step 1: Apply rotation (sensor frame → board frame)
 	rotate_3f(_rotation, x, y, z);
 
+	// Step 2: Scale to physical units (counts → rad/s)
+	x *= _scale;
+	y *= _scale;
+	z *= _scale;
+
+	// Step 3: Apply external bias (already in rad/s)
+	const matrix::Vector3f external_bias = GetExternalBias();
+	x += external_bias(0);
+	y += external_bias(1);
+	z += external_bias(2);
+
+	// Step 4: Publish
 	sensor_gyro_s report;
 
 	report.timestamp_sample = timestamp_sample;
 	report.device_id = _device_id;
 	report.temperature = _temperature;
 	report.error_count = _error_count;
-	report.x = x * _scale;
-	report.y = y * _scale;
-	report.z = z * _scale;
-	report.clip_counter[0] = (fabsf(x) >= _clip_limit);
-	report.clip_counter[1] = (fabsf(y) >= _clip_limit);
-	report.clip_counter[2] = (fabsf(z) >= _clip_limit);
+	report.x = x;
+	report.y = y;
+	report.z = z;
+	report.clip_counter[0] = (fabsf(x / _scale) >= _clip_limit);
+	report.clip_counter[1] = (fabsf(y / _scale) >= _clip_limit);
+	report.clip_counter[2] = (fabsf(z / _scale) >= _clip_limit);
 	report.samples = 1;
 	report.timestamp = hrt_absolute_time();
 
@@ -136,13 +163,27 @@ void PX4Gyroscope::update(const hrt_abstime &timestamp_sample, float x, float y,
 
 void PX4Gyroscope::updateFIFO(sensor_gyro_fifo_s &sample)
 {
-	// rotate all raw samples and publish fifo
+	// Step 1: Rotate all raw samples (sensor frame → board frame)
 	const uint8_t N = sample.samples;
 
 	for (int n = 0; n < N; n++) {
 		rotate_3i(_rotation, sample.x[n], sample.y[n], sample.z[n]);
 	}
 
+	// Step 2: Get external bias and convert to counts
+	const matrix::Vector3f external_bias = GetExternalBias();
+	const int16_t bias_counts_x = static_cast<int16_t>(roundf(external_bias(0) / _scale));
+	const int16_t bias_counts_y = static_cast<int16_t>(roundf(external_bias(1) / _scale));
+	const int16_t bias_counts_z = static_cast<int16_t>(roundf(external_bias(2) / _scale));
+
+	// Step 3: Apply bias to raw samples (simple addition)
+	for (int n = 0; n < N; n++) {
+		sample.x[n] += bias_counts_x;
+		sample.y[n] += bias_counts_y;
+		sample.z[n] += bias_counts_z;
+	}
+
+	// Step 4: Publish FIFO
 	sample.device_id = _device_id;
 	sample.scale = _scale;
 	sample.timestamp = hrt_absolute_time();
@@ -179,4 +220,37 @@ void PX4Gyroscope::UpdateClipLimit()
 {
 	// 99.9% of potential max
 	_clip_limit = fabsf(_range / _scale * 0.999f);
+}
+
+matrix::Vector3f PX4Gyroscope::GetExternalBias()
+{
+	// Read global bias (thread-safe via critical section)
+	// All PX4Gyroscope instances read the SAME values
+#if defined(__PX4_NUTTX)
+	irqstate_t flags = px4_enter_critical_section();
+	matrix::Vector3f bias{g_external_bias_x, g_external_bias_y, g_external_bias_z};
+	px4_leave_critical_section(flags);
+	return bias;
+#else
+	// POSIX/SITL: no IRQ, simple read is safe (single-threaded simulation)
+	return matrix::Vector3f{g_external_bias_x, g_external_bias_y, g_external_bias_z};
+#endif
+}
+
+void PX4Gyroscope::SetExternalBias(const matrix::Vector3f &bias)
+{
+	// Update global bias (thread-safe via critical section)
+	// This affects ALL PX4Gyroscope instances immediately
+#if defined(__PX4_NUTTX)
+	irqstate_t flags = px4_enter_critical_section();
+	g_external_bias_x = bias(0);
+	g_external_bias_y = bias(1);
+	g_external_bias_z = bias(2);
+	px4_leave_critical_section(flags);
+#else
+	// POSIX/SITL: no IRQ, simple write is safe (single-threaded simulation)
+	g_external_bias_x = bias(0);
+	g_external_bias_y = bias(1);
+	g_external_bias_z = bias(2);
+#endif
 }

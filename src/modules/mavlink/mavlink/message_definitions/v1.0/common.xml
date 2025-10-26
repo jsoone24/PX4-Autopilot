@@ -7789,5 +7789,17 @@
       <field type="float" name="gyro_bias_y" units="rad/s">Gyro bias y</field>
       <field type="float" name="gyro_bias_z" units="rad/s">Gyro bias z</field>
     </message>
+    <message id="31018" name="GET_ACCEL_BIAS">
+      <description> Accelerometer bias for critic in asymmetric actor critic training. </description>
+      <field type="float" name="accel_bias_x" units="m/s/s">Accelerometer bias x</field>
+      <field type="float" name="accel_bias_y" units="m/s/s">Accelerometer bias y</field>
+      <field type="float" name="accel_bias_z" units="m/s/s">Accelerometer bias z</field>
+    </message>
+    <message id="31019" name="SET_ACCEL_BIAS">
+      <description> Set accelerometer bias for critic in asymmetric actor critic training. </description>
+      <field type="float" name="accel_bias_x" units="m/s/s">Accelerometer bias x</field>
+      <field type="float" name="accel_bias_y" units="m/s/s">Accelerometer bias y</field>
+      <field type="float" name="accel_bias_z" units="m/s/s">Accelerometer bias z</field>
+    </message>
   </messages>
 </mavlink>

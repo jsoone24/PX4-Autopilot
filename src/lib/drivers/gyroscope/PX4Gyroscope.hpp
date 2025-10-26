@@ -62,6 +62,11 @@ public:
 
 	int get_instance() { return _sensor_pub.get_instance(); };
 
+	// Static methods for external bias injection (shared by ALL instances)
+	// Used by MAVLink to inject gyro bias from external systems
+	static matrix::Vector3f GetExternalBias();
+	static void SetExternalBias(const matrix::Vector3f &bias);
+
 private:
 	void UpdateClipLimit();
 

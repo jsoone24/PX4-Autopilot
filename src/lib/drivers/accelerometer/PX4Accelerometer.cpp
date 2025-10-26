@@ -37,7 +37,22 @@
 #include <lib/drivers/device/Device.hpp>
 #include <lib/parameters/param.h>
 
+#if defined(__PX4_NUTTX)
+# include <nuttx/irq.h>
+#endif
+
 using namespace time_literals;
+
+namespace
+{
+// Global variables for external bias injection
+// Shared by ALL PX4Accelerometer instances
+// Initialized to zero, updated via SetExternalBias() from MAVLink
+// Protected by critical section on NuttX (IRQ disable) for thread-safety
+float g_external_bias_x{0.f};
+float g_external_bias_y{0.f};
+float g_external_bias_z{0.f};
+}
 
 static constexpr int32_t sum(const int16_t samples[], uint8_t len)
 {
@@ -116,6 +131,9 @@ void PX4Accelerometer::update(const hrt_abstime &timestamp_sample, float x, floa
 	// Apply rotation (before scaling)
 	rotate_3f(_rotation, x, y, z);
 
+	// Retrieve external bias in sensor units (m/s^2)
+	const matrix::Vector3f external_bias = GetExternalBias();
+
 	// publish
 	sensor_accel_s report;
 
@@ -123,9 +141,9 @@ void PX4Accelerometer::update(const hrt_abstime &timestamp_sample, float x, floa
 	report.device_id = _device_id;
 	report.temperature = _temperature;
 	report.error_count = _error_count;
-	report.x = x * _scale;
-	report.y = y * _scale;
-	report.z = z * _scale;
+	report.x = x * _scale + external_bias(0);
+	report.y = y * _scale + external_bias(1);
+	report.z = z * _scale + external_bias(2);
 	report.clip_counter[0] = (fabsf(x) >= _clip_limit);
 	report.clip_counter[1] = (fabsf(y) >= _clip_limit);
 	report.clip_counter[2] = (fabsf(z) >= _clip_limit);
@@ -142,6 +160,19 @@ void PX4Accelerometer::updateFIFO(sensor_accel_fifo_s &sample)
 
 	for (int n = 0; n < N; n++) {
 		rotate_3i(_rotation, sample.x[n], sample.y[n], sample.z[n]);
+	}
+
+	// Step 2: Get external bias and convert to counts
+	const matrix::Vector3f external_bias = GetExternalBias();
+	const int16_t bias_counts_x = static_cast<int16_t>(roundf(external_bias(0) / _scale));
+	const int16_t bias_counts_y = static_cast<int16_t>(roundf(external_bias(1) / _scale));
+	const int16_t bias_counts_z = static_cast<int16_t>(roundf(external_bias(2) / _scale));
+
+	// Step 3: Apply bias to raw samples (simple addition)
+	for (int n = 0; n < N; n++) {
+		sample.x[n] += bias_counts_x;
+		sample.y[n] += bias_counts_y;
+		sample.z[n] += bias_counts_z;
 	}
 
 	sample.device_id = _device_id;
@@ -180,4 +211,31 @@ void PX4Accelerometer::UpdateClipLimit()
 {
 	// 99.9% of potential max
 	_clip_limit = fabsf(_range / _scale * 0.999f);
+}
+
+matrix::Vector3f PX4Accelerometer::GetExternalBias()
+{
+#if defined(__PX4_NUTTX)
+	irqstate_t flags = px4_enter_critical_section();
+	matrix::Vector3f bias{g_external_bias_x, g_external_bias_y, g_external_bias_z};
+	px4_leave_critical_section(flags);
+	return bias;
+#else
+	return matrix::Vector3f{g_external_bias_x, g_external_bias_y, g_external_bias_z};
+#endif
+}
+
+void PX4Accelerometer::SetExternalBias(const matrix::Vector3f &bias)
+{
+#if defined(__PX4_NUTTX)
+	irqstate_t flags = px4_enter_critical_section();
+	g_external_bias_x = bias(0);
+	g_external_bias_y = bias(1);
+	g_external_bias_z = bias(2);
+	px4_leave_critical_section(flags);
+#else
+	g_external_bias_x = bias(0);
+	g_external_bias_y = bias(1);
+	g_external_bias_z = bias(2);
+#endif
 }

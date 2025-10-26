@@ -121,6 +121,7 @@
 #include "streams/VIBRATION.hpp"
 #include "streams/WIND_COV.hpp"
 #include "streams/PRIVILEGED_INFO.hpp"
+#include "streams/GET_ACCEL_BIAS.hpp"
 #include "streams/GET_GYRO_BIAS.hpp"
 #if defined(MAVLINK_MSG_ID_FIGURE_EIGHT_EXECUTION_STATUS)
 #include "streams/FIGURE_EIGHT_EXECUTION_STATUS.hpp"
@@ -510,6 +511,9 @@ static const StreamListItem streams_list[] = {
 #if defined(PRIVILEGED_INFO_HPP)
 	create_stream_list_item<MavlinkStreamPrivilegedInfo>(),
 #endif // PRIVILEGED_INFO_HPP
+#if defined(GET_ACCEL_BIAS_HPP)
+	create_stream_list_item<MavlinkStreamGetAccelBias>(),
+#endif // GET_ACCEL_BIAS_HPP
 #if defined(GET_GYRO_BIAS_HPP)
 	create_stream_list_item<MavlinkStreamGetGyroBias>(),
 #endif // GET_GYRO_BIAS_HPP

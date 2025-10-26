@@ -111,6 +111,7 @@
 #include <uORB/topics/vehicle_trajectory_bezier.h>
 #include <uORB/topics/vehicle_trajectory_waypoint.h>
 #include <uORB/topics/velocity_limits.h>
+#include <uORB/topics/accel_bias.h>
 #include <uORB/topics/gyro_bias.h>
 #if !defined(CONSTRAINED_FLASH)
 # include <uORB/topics/debug_array.h>
@@ -157,6 +158,7 @@ private:
 	void handle_message(mavlink_message_t *msg);
 
 	void handle_message_gyro_bias(mavlink_message_t *msg);
+	void handle_message_accel_bias(mavlink_message_t *msg);
 	void handle_message_adsb_vehicle(mavlink_message_t *msg);
 	void handle_message_att_pos_mocap(mavlink_message_t *msg);
 	void handle_message_battery_status(mavlink_message_t *msg);
@@ -326,6 +328,7 @@ private:
 	uORB::Publication<vehicle_trajectory_bezier_s>		_trajectory_bezier_pub{ORB_ID(vehicle_trajectory_bezier)};
 	uORB::Publication<vehicle_trajectory_waypoint_s>	_trajectory_waypoint_pub{ORB_ID(vehicle_trajectory_waypoint)};
 	uORB::Publication<gyro_bias_s>				_gyro_bias_pub{ORB_ID(gyro_bias)};
+	uORB::Publication<accel_bias_s>			_accel_bias_pub{ORB_ID(accel_bias)};
 
 #if !defined(CONSTRAINED_FLASH)
 	uORB::Publication<debug_array_s>			_debug_array_pub {ORB_ID(debug_array)};

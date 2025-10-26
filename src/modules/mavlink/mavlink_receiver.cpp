@@ -62,6 +62,8 @@
 #include "mavlink_receiver.h"
 
 #include <lib/drivers/device/Device.hpp> // For DeviceId union
+#include <lib/drivers/accelerometer/PX4Accelerometer.hpp> // For external bias injection
+#include <lib/drivers/gyroscope/PX4Gyroscope.hpp> // For external bias injection
 
 #ifdef CONFIG_NET
 #define MAVLINK_RECEIVER_NET_ADDED_STACK 1360
@@ -282,6 +284,10 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 
 	case MAVLINK_MSG_ID_SET_GYRO_BIAS:
 		handle_message_gyro_bias(msg);
+		break;
+
+	case MAVLINK_MSG_ID_SET_ACCEL_BIAS:
+		handle_message_accel_bias(msg);
 		break;
 
 #if !defined(CONSTRAINED_FLASH)
@@ -770,6 +776,7 @@ MavlinkReceiver::handle_message_gyro_bias(mavlink_message_t *msg)
 	mavlink_set_gyro_bias_t gyro_bias;
 	mavlink_msg_set_gyro_bias_decode(msg, &gyro_bias);
 
+	// Step 1: Publish to uORB topic (for logging/monitoring)
 	gyro_bias_s gyro_bias_msg{};
 	gyro_bias_msg.timestamp = hrt_absolute_time();
 	gyro_bias_msg.gyro_bias_x = gyro_bias.gyro_bias_x;
@@ -777,6 +784,44 @@ MavlinkReceiver::handle_message_gyro_bias(mavlink_message_t *msg)
 	gyro_bias_msg.gyro_bias_z = gyro_bias.gyro_bias_z;
 
 	_gyro_bias_pub.publish(gyro_bias_msg);
+
+	// Step 2: Apply to ALL PX4Gyroscope instances immediately
+	matrix::Vector3f bias{
+		gyro_bias.gyro_bias_x,
+		gyro_bias.gyro_bias_y,
+		gyro_bias.gyro_bias_z
+	};
+	PX4Gyroscope::SetExternalBias(bias);
+
+	PX4_INFO("Gyro external bias updated: [%.5f, %.5f, %.5f] rad/s",
+	         (double)bias(0), (double)bias(1), (double)bias(2));
+}
+
+void
+MavlinkReceiver::handle_message_accel_bias(mavlink_message_t *msg)
+{
+	mavlink_set_accel_bias_t accel_bias;
+	mavlink_msg_set_accel_bias_decode(msg, &accel_bias);
+
+	// Step 1: Publish to uORB topic (for logging/monitoring)
+	accel_bias_s accel_bias_msg{};
+	accel_bias_msg.timestamp = hrt_absolute_time();
+	accel_bias_msg.accel_bias_x = accel_bias.accel_bias_x;
+	accel_bias_msg.accel_bias_y = accel_bias.accel_bias_y;
+	accel_bias_msg.accel_bias_z = accel_bias.accel_bias_z;
+
+	_accel_bias_pub.publish(accel_bias_msg);
+
+	// Step 2: Apply to ALL PX4Accelerometer instances immediately
+	matrix::Vector3f bias{
+		accel_bias.accel_bias_x,
+		accel_bias.accel_bias_y,
+		accel_bias.accel_bias_z
+	};
+	PX4Accelerometer::SetExternalBias(bias);
+
+	PX4_INFO("Accel external bias updated: [%.5f, %.5f, %.5f] m/s^2",
+	         (double)bias(0), (double)bias(1), (double)bias(2));
 }
 
 void

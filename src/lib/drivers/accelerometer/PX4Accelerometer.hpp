@@ -36,6 +36,7 @@
 #include <drivers/drv_hrt.h>
 #include <lib/conversion/rotation.h>
 #include <lib/geo/geo.h>
+#include <matrix/matrix/math.hpp>
 #include <uORB/PublicationMulti.hpp>
 #include <uORB/topics/sensor_accel.h>
 #include <uORB/topics/sensor_accel_fifo.h>
@@ -62,6 +63,11 @@ public:
 	void updateFIFO(sensor_accel_fifo_s &sample);
 
 	int get_instance() { return _sensor_pub.get_instance(); };
+
+	// Static methods for external bias injection (shared by ALL instances)
+	// Used by MAVLink to inject accelerometer bias from external systems
+	static matrix::Vector3f GetExternalBias();
+	static void SetExternalBias(const matrix::Vector3f &bias);
 
 private:
 	void UpdateClipLimit();
