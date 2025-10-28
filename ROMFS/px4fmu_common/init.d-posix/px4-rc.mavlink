@@ -2,7 +2,7 @@
 # shellcheck disable=SC2154
 
 udp_offboard_port_local=$((14580+px4_instance))
-udp_offboard_port_remote=$((16000+px4_instance))
+udp_offboard_port_remote=$((17000+px4_instance))
 #[ "$px4_instance" -gt 9 ] && udp_offboard_port_remote=14549 # use the same ports for more than 10 instances to avoid port overlaps
 #udp_onboard_payload_port_local=$((14280+px4_instance))
 #udp_onboard_payload_port_remote=$((14030+px4_instance))
@@ -24,7 +24,7 @@ mavlink stream -r 10 -s OPTICAL_FLOW_RAD -u $udp_gcs_port_local
 
 # API/Offboard link
 mavlink start -x -u $udp_offboard_port_local -r 4000000 -f -m onboard -o $udp_offboard_port_remote
-mavlink stream -r 100 -s HIL_STATE_QUATERNION -u $udp_offboard_port_local
+#mavlink stream -r 20 -s HIL_STATE_QUATERNION -u $udp_offboard_port_local
 ## Onboard link to camera
 #mavlink start -x -u $udp_onboard_payload_port_local -r 4000 -f -m onboard -o $udp_onboard_payload_port_remote
 #

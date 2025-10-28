@@ -131,8 +131,15 @@ void PX4Accelerometer::update(const hrt_abstime &timestamp_sample, float x, floa
 	// Apply rotation (before scaling)
 	rotate_3f(_rotation, x, y, z);
 
+	x *= _scale;
+	y *= _scale;
+	z *= _scale;
+
 	// Retrieve external bias in sensor units (m/s^2)
 	const matrix::Vector3f external_bias = GetExternalBias();
+	x += external_bias(0);
+	y += external_bias(1);
+	z += external_bias(2);
 
 	// publish
 	sensor_accel_s report;
@@ -141,12 +148,12 @@ void PX4Accelerometer::update(const hrt_abstime &timestamp_sample, float x, floa
 	report.device_id = _device_id;
 	report.temperature = _temperature;
 	report.error_count = _error_count;
-	report.x = x * _scale + external_bias(0);
-	report.y = y * _scale + external_bias(1);
-	report.z = z * _scale + external_bias(2);
-	report.clip_counter[0] = (fabsf(x) >= _clip_limit);
-	report.clip_counter[1] = (fabsf(y) >= _clip_limit);
-	report.clip_counter[2] = (fabsf(z) >= _clip_limit);
+	report.x = x;
+	report.y = y;
+	report.z = z;
+	report.clip_counter[0] = (fabsf(x / _scale) >= _clip_limit);
+	report.clip_counter[1] = (fabsf(y / _scale) >= _clip_limit);
+	report.clip_counter[2] = (fabsf(z / _scale) >= _clip_limit);
 	report.samples = 1;
 	report.timestamp = hrt_absolute_time();
 

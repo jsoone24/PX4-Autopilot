@@ -320,7 +320,6 @@ private:
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::MAV_TYPE>) _param_mav_type,
 		(ParamInt<px4::params::MAV_SYS_ID>) _param_mav_sys_id,
-		(ParamInt<px4::params::MAV_COMP_ID>) _param_mav_comp_id,
-		(ParamInt<px4::params::SIM_GYRO_BIAS_XY>) _param_sim_gyro_bias_xy
+		(ParamInt<px4::params::MAV_COMP_ID>) _param_mav_comp_id
 	)
 };
