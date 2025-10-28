@@ -4,15 +4,41 @@
 #param set-default MAV_SYS_ID $((px4_instance+1))
 #param set-default IMU_INTEG_RATE 250
 
-param set-default COM_ACT_FAIL_ACT 0
-param set-default COM_FLTT_LOW_ACT 1
-param set-default COM_IMB_PROP_ACT 0
-param set-default COM_LOW_BAT_ACT 0
-param set-default COM_OBL_RC_ACT 5
-#param set-default COM_POS_LOW_ACT 1
-param set-default COM_QC_ACT -1
-param set-default COM_WIND_MAX_ACT 1
-param set-default NAV_DLL_ACT 1
-param set-default NAV_RCL_ACT 1
-param set-default GF_ACTION 1
+# SDLOG_MODE: logging mode trigger; default 0 = arm-to-disarm logging (set to default).
 param set-default SDLOG_MODE -1
+param set-default COM_RC_IN_MODE 4
+
+# COM_ACT_FAIL_ACT: actuator failure failsafe; default 0 = warning only (set to default).
+# param set-default COM_ACT_FAIL_ACT 0
+# COM_FLTT_LOW_ACT: low remaining flight-time failsafe; default 3 = Return (set to default).
+# param set-default COM_FLTT_LOW_ACT 3
+# COM_IMB_PROP_ACT: imbalanced propeller response; default 0 = warning (set to default).
+# param set-default COM_IMB_PROP_ACT 0
+# COM_LOW_BAT_ACT: critical battery failsafe action; default 0 = warning (set to default).
+# param set-default COM_LOW_BAT_ACT 0
+# COM_OBL_RC_ACT: offboard-loss failsafe action; default 0 = Position mode (set to default).
+# param set-default COM_OBL_RC_ACT 0
+# COM_QC_ACT: post-quadchute command; default 0 = Return (set to default).
+# param set-default COM_QC_ACT 0
+# COM_WIND_MAX_ACT: high-wind failsafe action; default 0 = none (set to default).
+# param set-default COM_WIND_MAX_ACT 0
+# GF_ACTION: geofence violation action; default 2 = Hold mode (set to default).
+# param set-default GF_ACTION 2
+# temp
+# COM_RCL_EXCEPT: ignore RC-loss in selected modes; default 0 = none (set to default).
+# param set COM_RCL_EXCEPT 0
+# NAV_DLL_ACT: GCS/data link loss action; default 0 = disabled (set to default).
+# param set NAV_DLL_ACT 0
+# NAV_RCL_ACT: RC-loss failsafe action; default 2 = Return (set to default).
+# param set NAV_RCL_ACT 2
+# param set-default COM_POS_LOW_ACT 1
+#
+# Archived overrides (previous Posix bench settings)
+# param set-default COM_FLTT_LOW_ACT 1
+# param set-default COM_OBL_RC_ACT 5
+# param set-default COM_QC_ACT -1
+# param set-default COM_WIND_MAX_ACT 1
+# param set-default GF_ACTION 1
+# param set COM_RCL_EXCEPT 4
+# param set NAV_RCL_ACT 0
+#

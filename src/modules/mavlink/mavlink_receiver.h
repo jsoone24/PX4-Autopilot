@@ -328,7 +328,7 @@ private:
 	uORB::Publication<vehicle_trajectory_bezier_s>		_trajectory_bezier_pub{ORB_ID(vehicle_trajectory_bezier)};
 	uORB::Publication<vehicle_trajectory_waypoint_s>	_trajectory_waypoint_pub{ORB_ID(vehicle_trajectory_waypoint)};
 	uORB::Publication<gyro_bias_s>				_gyro_bias_pub{ORB_ID(gyro_bias)};
-	uORB::Publication<accel_bias_s>			_accel_bias_pub{ORB_ID(accel_bias)};
+	uORB::Publication<accel_bias_s>				_accel_bias_pub{ORB_ID(accel_bias)};
 
 #if !defined(CONSTRAINED_FLASH)
 	uORB::Publication<debug_array_s>			_debug_array_pub {ORB_ID(debug_array)};

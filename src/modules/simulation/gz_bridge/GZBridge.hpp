@@ -153,9 +153,5 @@ private:
 	const std::string _model_pose;
 
 	float _temperature{288.15};  // 15 degrees
-	// ===============================================
-	void gyroBiasCallback(const gz::msgs::Vector3d &msg);
-	gz::math::Vector3d gyrobias{0.0, 0.0, 0.0};
-	// ===============================================
 	gz::transport::Node _node;
 };

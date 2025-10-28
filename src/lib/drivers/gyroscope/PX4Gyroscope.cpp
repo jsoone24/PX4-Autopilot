@@ -54,6 +54,40 @@ float g_external_bias_y{0.f};
 float g_external_bias_z{0.f};
 }
 
+matrix::Vector3f PX4Gyroscope::GetExternalBias()
+{
+	// Read global bias (thread-safe via critical section)
+	// All PX4Gyroscope instances read the SAME values
+#if defined(__PX4_NUTTX)
+	irqstate_t flags = px4_enter_critical_section();
+	matrix::Vector3f bias{g_external_bias_x, g_external_bias_y, g_external_bias_z};
+	px4_leave_critical_section(flags);
+	return bias;
+#else
+	// POSIX/SITL: no IRQ, simple read is safe (single-threaded simulation)
+	return matrix::Vector3f{g_external_bias_x, g_external_bias_y, g_external_bias_z};
+#endif
+}
+
+void PX4Gyroscope::SetExternalBias(const matrix::Vector3f &bias)
+{
+	// Update global bias (thread-safe via critical section)
+	// This affects ALL PX4Gyroscope instances immediately
+#if defined(__PX4_NUTTX)
+	irqstate_t flags = px4_enter_critical_section();
+	g_external_bias_x = bias(0);
+	g_external_bias_y = bias(1);
+	g_external_bias_z = bias(2);
+	px4_leave_critical_section(flags);
+#else
+	// POSIX/SITL: no IRQ, simple write is safe (single-threaded simulation)
+	g_external_bias_x = bias(0);
+	g_external_bias_y = bias(1);
+	g_external_bias_z = bias(2);
+#endif
+}
+
+
 static constexpr int32_t sum(const int16_t samples[], uint8_t len)
 {
 	int32_t sum = 0;
@@ -220,37 +254,4 @@ void PX4Gyroscope::UpdateClipLimit()
 {
 	// 99.9% of potential max
 	_clip_limit = fabsf(_range / _scale * 0.999f);
-}
-
-matrix::Vector3f PX4Gyroscope::GetExternalBias()
-{
-	// Read global bias (thread-safe via critical section)
-	// All PX4Gyroscope instances read the SAME values
-#if defined(__PX4_NUTTX)
-	irqstate_t flags = px4_enter_critical_section();
-	matrix::Vector3f bias{g_external_bias_x, g_external_bias_y, g_external_bias_z};
-	px4_leave_critical_section(flags);
-	return bias;
-#else
-	// POSIX/SITL: no IRQ, simple read is safe (single-threaded simulation)
-	return matrix::Vector3f{g_external_bias_x, g_external_bias_y, g_external_bias_z};
-#endif
-}
-
-void PX4Gyroscope::SetExternalBias(const matrix::Vector3f &bias)
-{
-	// Update global bias (thread-safe via critical section)
-	// This affects ALL PX4Gyroscope instances immediately
-#if defined(__PX4_NUTTX)
-	irqstate_t flags = px4_enter_critical_section();
-	g_external_bias_x = bias(0);
-	g_external_bias_y = bias(1);
-	g_external_bias_z = bias(2);
-	px4_leave_critical_section(flags);
-#else
-	// POSIX/SITL: no IRQ, simple write is safe (single-threaded simulation)
-	g_external_bias_x = bias(0);
-	g_external_bias_y = bias(1);
-	g_external_bias_z = bias(2);
-#endif
 }

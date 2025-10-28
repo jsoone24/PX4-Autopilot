@@ -8,6 +8,11 @@
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
 
+#include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/vehicle_control_mode.h>
+#include <uORB/topics/position_setpoint_triplet.h>
+#include <uORB/topics/failsafe_flags.h>
+
 class MavlinkStreamPrivilegedInfo : public MavlinkStream
 {
 public:
@@ -31,13 +36,24 @@ protected:
 		vehicle_attitude_setpoint_s attitude;
 		vehicle_local_position_setpoint_s local_position;
 
+		vehicle_status_s vehicle_status;
+		vehicle_control_mode_s control_mode;
+		position_setpoint_triplet_s position_setpoint_triplet;
+		failsafe_flags_s failsafe_flags;
+
 		if (_estimator_sensor_bias_sub.copy(&bias) &&
 		    _estimator_innovations_sub.copy(&innovations) &&
 		    _estimator_innovations_var_sub.copy(&innovations_var) &&
 		    _estimator_status_sub.copy(&status) &&
 		    _vehicle_rates_setpoint_sub.copy(&rates) &&
 		    _vehicle_attitude_setpoint_sub.copy(&attitude) &&
-		    _vehicle_local_position_setpoint_sub.copy(&local_position)) {
+		    _vehicle_local_position_setpoint_sub.copy(&local_position) &&
+
+		    _vehicle_status_sub.copy(&vehicle_status) &&
+		    _vehicle_control_mode_sub.copy(&control_mode) &&
+		    _position_setpoint_triplet_sub.copy(&position_setpoint_triplet) &&
+		    _failsafe_flags_sub.copy(&failsafe_flags)
+		) {
 
 			mavlink_privileged_info_t info_msg{};
 
@@ -100,7 +116,32 @@ protected:
 			info_msg.attitude_setpoint_thrust[1] = attitude.thrust_body[1];
 			info_msg.attitude_setpoint_thrust[2] = attitude.thrust_body[2];
 
+			// --- NEW: VehicleStatus / VehicleControlMode ---
+			info_msg.nav_state = vehicle_status.nav_state; // uint8
+			info_msg.control_mode_auto_enabled     = control_mode.flag_control_auto_enabled;
+			info_msg.control_mode_offboard_enabled = control_mode.flag_control_offboard_enabled;
+			info_msg.control_mode_posctl_enabled   = control_mode.flag_control_position_enabled;
+			info_msg.control_mode_velctl_enabled   = control_mode.flag_control_velocity_enabled;
+			info_msg.control_mode_altctl_enabled   = control_mode.flag_control_altitude_enabled;
+
+			// --- NEW: PositionSetpointTriplet.current ---
+			const position_setpoint_s &sp = position_setpoint_triplet.current;
+			info_msg.pos_sp_lat  = (float)sp.lat;
+			info_msg.pos_sp_lon  = (float)sp.lon;
+			info_msg.pos_sp_alt  = sp.alt;
+			info_msg.pos_sp_yaw  = sp.yaw;
+			info_msg.pos_sp_acceptance_radius      = sp.acceptance_radius;
+			info_msg.pos_sp_loiter_radius          = sp.loiter_radius;
+			info_msg.pos_sp_loiter_ccw             = sp.loiter_direction_counter_clockwise;
+			info_msg.pos_sp_type                   = sp.type;
+
+			// --- NEW: FailsafeFlags(일부) ---
+			info_msg.ff_offboard_lost         = failsafe_flags.offboard_control_signal_lost;
+			info_msg.ff_geofence_breached     = failsafe_flags.geofence_breached;
+			info_msg.ff_local_position_accuracy_low = failsafe_flags.local_position_accuracy_low;
+
 			mavlink_msg_privileged_info_send_struct(_mavlink->get_channel(), &info_msg);
+
 			return true;
 		}
 
@@ -115,6 +156,11 @@ private:
 	uORB::Subscription _vehicle_rates_setpoint_sub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Subscription _vehicle_attitude_setpoint_sub{ORB_ID(vehicle_attitude_setpoint)};
 	uORB::Subscription _vehicle_local_position_setpoint_sub{ORB_ID(vehicle_local_position_setpoint)};
+
+	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
+	uORB::Subscription _vehicle_control_mode_sub{ORB_ID(vehicle_control_mode)};
+	uORB::Subscription _position_setpoint_triplet_sub{ORB_ID(position_setpoint_triplet)};
+	uORB::Subscription _failsafe_flags_sub{ORB_ID(failsafe_flags)};
 
 	MavlinkStreamPrivilegedInfo(const MavlinkStreamPrivilegedInfo &) = delete;
 	MavlinkStreamPrivilegedInfo &operator=(const MavlinkStreamPrivilegedInfo &) = delete;
