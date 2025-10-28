@@ -1451,6 +1451,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("SCALED_IMU2", 20.0f);
 		configure_stream_local("SCALED_IMU3", 20.0f);
 		configure_stream_local("GET_GYRO_BIAS", 20.0f);
+		configure_stream_local("GET_ACCEL_BIAS", 20.0f);
 
 #if !defined(CONSTRAINED_FLASH)
 		configure_stream_local("DEBUG", 1.0f);
@@ -1528,6 +1529,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("SCALED_IMU2", 20.0f);
 		configure_stream_local("SCALED_IMU3", 20.0f);
 		configure_stream_local("GET_GYRO_BIAS", 20.0f);
+		configure_stream_local("GET_ACCEL_BIAS", 20.0f);
 
 		// Simulation & Training only Values
 		configure_stream_local("HIL_STATE_QUATERNION", 20.0f);
