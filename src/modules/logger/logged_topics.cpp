@@ -138,6 +138,7 @@ void LoggedTopics::add_default_topics()
 	add_optional_topic("vtol_vehicle_status", 200);
 	add_topic("wind", 1000);
 	add_topic("gyro_bias", 0);
+	add_topic("accel_bias", 0);
 
 	// multi topics
 	add_optional_topic_multi("actuator_outputs", 100, 3);
