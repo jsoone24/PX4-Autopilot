@@ -510,6 +510,28 @@ void SimulatorMavlink::handle_message_hil_sensor(const mavlink_message_t *msg)
 
 	last_time = now_us;
 #endif
+	// Bias injection disabled - now handled in PX4Gyroscope sensor driver
+	// This ensures the same code path for SITL and real hardware
+	//gyro_bias_s gyro_bias{};
+	//_gyro_bias_sub.copy(&gyro_bias);
+	//
+	//gx_bias = gyro_bias.gyro_bias_x;
+	//gy_bias = gyro_bias.gyro_bias_y;
+	//gz_bias = gyro_bias.gyro_bias_z;
+	//
+	//accel_bias_s accel_bias{};
+	//_accel_bias_sub.copy(&accel_bias);
+	//
+	//ax_bias = accel_bias.accel_bias_x;
+	//ay_bias = accel_bias.accel_bias_y;
+	//az_bias = accel_bias.accel_bias_z;
+	//
+	//imu.xgyro += gx_bias;
+	//imu.ygyro += gy_bias;
+	//imu.zgyro += gz_bias;
+	//imu.xacc  += ax_bias;
+	//imu.yacc  += ay_bias;
+	//imu.zacc  += az_bias;
 
 	update_sensors(now_us, imu);
 

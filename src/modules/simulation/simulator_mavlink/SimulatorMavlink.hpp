@@ -77,6 +77,8 @@
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_command_ack.h>
 #include <uORB/topics/rpm.h>
+#include <uORB/topics/accel_bias.h>
+#include <uORB/topics/gyro_bias.h>
 #include <random>
 
 #include <mavlink.h>
@@ -268,6 +270,14 @@ private:
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};
 	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
+	uORB::Subscription _gyro_bias_sub{ORB_ID(gyro_bias)};
+	uORB::Subscription _accel_bias_sub{ORB_ID(accel_bias)};
+	float gx_bias = 0;
+	float gy_bias = 0;
+	float gz_bias = 0;
+	float ax_bias = 0;
+	float ay_bias = 0;
+	float az_bias = 0;
 
 	// hil map_ref data
 	MapProjection _global_local_proj_ref{};
