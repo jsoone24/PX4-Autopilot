@@ -37,6 +37,7 @@
 
 #include <lib/atmosphere/atmosphere.h>
 #include <lib/mathlib/mathlib.h>
+#include <lib/drivers/gyroscope/PX4Gyroscope.hpp>
 
 #include <px4_platform_common/getopt.h>
 
@@ -492,6 +493,9 @@ void GZBridge::imuCallback(const gz::msgs::IMU &imu)
 					    imu.angular_velocity().y(),
 					    imu.angular_velocity().z()));
 
+	// Get external gyro bias (for attack simulation)
+	matrix::Vector3f external_bias = PX4Gyroscope::GetExternalBias();
+
 	// publish gyro
 	sensor_gyro_s sensor_gyro{};
 #if defined(ENABLE_LOCKSTEP_SCHEDULER)
@@ -502,9 +506,9 @@ void GZBridge::imuCallback(const gz::msgs::IMU &imu)
 	sensor_gyro.timestamp = hrt_absolute_time();
 #endif
 	sensor_gyro.device_id = 1310988; // 1310988: DRV_IMU_DEVTYPE_SIM, BUS: 1, ADDR: 1, TYPE: SIMULATION
-	sensor_gyro.x = gyro_b.X();
-	sensor_gyro.y = gyro_b.Y();
-	sensor_gyro.z = gyro_b.Z();
+	sensor_gyro.x = gyro_b.X() + static_cast<double>(external_bias(0));
+	sensor_gyro.y = gyro_b.Y() + static_cast<double>(external_bias(1));
+	sensor_gyro.z = gyro_b.Z() + static_cast<double>(external_bias(2));
 	sensor_gyro.temperature = NAN;
 	sensor_gyro.samples = 1;
 	_sensor_gyro_pub.publish(sensor_gyro);
