@@ -11,7 +11,7 @@ udp_offboard_port_remote=$((17000+px4_instance))
 udp_gcs_port_local=$((18570+px4_instance))
 
 # GCS link
-mavlink start -x -u $udp_gcs_port_local -r 4000000 -f
+mavlink start -x -u $udp_gcs_port_local -r 4000000 -f # -t ip-address of GCS
 mavlink stream -r 50 -s POSITION_TARGET_LOCAL_NED -u $udp_gcs_port_local
 mavlink stream -r 50 -s LOCAL_POSITION_NED -u $udp_gcs_port_local
 mavlink stream -r 50 -s GLOBAL_POSITION_INT -u $udp_gcs_port_local
@@ -21,7 +21,7 @@ mavlink stream -r 50 -s ATTITUDE_TARGET -u $udp_gcs_port_local
 mavlink stream -r 50 -s SERVO_OUTPUT_RAW_0 -u $udp_gcs_port_local
 mavlink stream -r 20 -s RC_CHANNELS -u $udp_gcs_port_local
 mavlink stream -r 10 -s OPTICAL_FLOW_RAD -u $udp_gcs_port_local
-
+mavlink stream -r 50 -s SCALED_IMU -u $udp_gcs_port_local
 # API/Offboard link
 mavlink start -x -u $udp_offboard_port_local -r 4000000 -f -m onboard -o $udp_offboard_port_remote
 #mavlink stream -r 100 -s HIL_STATE_QUATERNION -u $udp_offboard_port_local
