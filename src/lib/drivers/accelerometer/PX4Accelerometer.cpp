@@ -136,10 +136,10 @@ void PX4Accelerometer::update(const hrt_abstime &timestamp_sample, float x, floa
 	z *= _scale;
 
 	// Retrieve external bias in sensor units (m/s^2)
-	const matrix::Vector3f external_bias = GetExternalBias();
-	x += external_bias(0);
-	y += external_bias(1);
-	z += external_bias(2);
+	//const matrix::Vector3f external_bias = GetExternalBias();
+	//x += external_bias(0);
+	//y += external_bias(1);
+	//z += external_bias(2);
 
 	// publish
 	sensor_accel_s report;

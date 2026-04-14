@@ -519,19 +519,19 @@ void SimulatorMavlink::handle_message_hil_sensor(const mavlink_message_t *msg)
 	//gy_bias = gyro_bias.gyro_bias_y;
 	//gz_bias = gyro_bias.gyro_bias_z;
 	//
-	//accel_bias_s accel_bias{};
-	//_accel_bias_sub.copy(&accel_bias);
+	accel_bias_s accel_bias{};
+	_accel_bias_sub.copy(&accel_bias);
 	//
-	//ax_bias = accel_bias.accel_bias_x;
-	//ay_bias = accel_bias.accel_bias_y;
-	//az_bias = accel_bias.accel_bias_z;
+	ax_bias = accel_bias.accel_bias_x;
+	ay_bias = accel_bias.accel_bias_y;
+	az_bias = accel_bias.accel_bias_z;
 	//
 	//imu.xgyro += gx_bias;
 	//imu.ygyro += gy_bias;
 	//imu.zgyro += gz_bias;
-	//imu.xacc  += ax_bias;
-	//imu.yacc  += ay_bias;
-	//imu.zacc  += az_bias;
+	imu.xacc  += ax_bias;
+	imu.yacc  += ay_bias;
+	imu.zacc  += az_bias;
 
 	update_sensors(now_us, imu);
 

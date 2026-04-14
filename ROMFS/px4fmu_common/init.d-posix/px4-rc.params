@@ -5,8 +5,10 @@
 #param set-default IMU_INTEG_RATE 250
 
 # SDLOG_MODE: logging mode trigger; default 0 = arm-to-disarm logging (set to default).
-param set-default SDLOG_MODE -1
-param set-default COM_RC_IN_MODE 4
+# param set-default SDLOG_MODE 0
+# param set-default COM_RC_IN_MODE 3
+# param set-default EKF2_ABL_LIM 1.0
+# param set-default EKF2_ABLACC_LIM 25.0
 
 # COM_ACT_FAIL_ACT: actuator failure failsafe; default 0 = warning only (set to default).
 # param set-default COM_ACT_FAIL_ACT 0
