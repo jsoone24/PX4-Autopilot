@@ -75,7 +75,7 @@
 [submodule "Tools/simulation/gz"]
 	path = Tools/simulation/gz
 	url = https://github.com/jsoone24/PX4-gazebo-models.git
-	branch = dnn-physics-v1.16.2
+	branch = v1.16.2-dnn-physics
 [submodule "boards/modalai/voxl2/libfc-sensor-api"]
 	path = boards/modalai/voxl2/libfc-sensor-api
 	url = https://gitlab.com/voxl-public/voxl-sdk/core-libs/libfc-sensor-api.git
