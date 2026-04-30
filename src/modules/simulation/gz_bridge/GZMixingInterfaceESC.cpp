@@ -33,6 +33,9 @@
 
 #include "GZMixingInterfaceESC.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 bool GZMixingInterfaceESC::init(const std::string &model_name)
 {
 
@@ -53,6 +56,14 @@ bool GZMixingInterfaceESC::init(const std::string &model_name)
 		return false;
 	}
 
+	std::string actuator_norm_topic = "/" + model_name + "/command/actuator_motors_norm";
+	_actuator_motors_norm_pub = _node.Advertise<gz::msgs::Actuators>(actuator_norm_topic);
+
+	if (!_actuator_motors_norm_pub.Valid()) {
+		PX4_ERR("failed to advertise %s", actuator_norm_topic.c_str());
+		return false;
+	}
+
 	_esc_status_pub.advertise();
 
 	pthread_mutex_init(&_node_mutex, nullptr);
@@ -65,6 +76,9 @@ bool GZMixingInterfaceESC::init(const std::string &model_name)
 bool GZMixingInterfaceESC::updateOutputs(bool stop_motors, uint16_t outputs[MAX_ACTUATORS], unsigned num_outputs,
 		unsigned num_control_groups_updated)
 {
+	(void)stop_motors;
+	(void)num_control_groups_updated;
+
 	unsigned active_output_count = 0;
 
 	for (unsigned i = 0; i < num_outputs; i++) {
@@ -79,13 +93,48 @@ bool GZMixingInterfaceESC::updateOutputs(bool stop_motors, uint16_t outputs[MAX_
 	if (active_output_count > 0) {
 		gz::msgs::Actuators rotor_velocity_message;
 		rotor_velocity_message.mutable_velocity()->Resize(active_output_count, 0);
+		gz::msgs::Actuators actuator_norm_message;
+		actuator_norm_message.mutable_normalized()->Resize(active_output_count, 0);
+
+		const uint64_t world_time_us = _world_time_provider ? _world_time_provider() : 0;
+
+		if (world_time_us > 0) {
+			const int64_t sec = static_cast<int64_t>(world_time_us / 1000000ULL);
+			const int64_t nsec = static_cast<int64_t>((world_time_us % 1000000ULL) * 1000ULL);
+
+			auto *raw_stamp = rotor_velocity_message.mutable_header()->mutable_stamp();
+			raw_stamp->set_sec(sec);
+			raw_stamp->set_nsec(nsec);
+
+			auto *norm_stamp = actuator_norm_message.mutable_header()->mutable_stamp();
+			norm_stamp->set_sec(sec);
+			norm_stamp->set_nsec(nsec);
+		}
 
 		for (unsigned i = 0; i < active_output_count; i++) {
 			rotor_velocity_message.set_velocity(i, outputs[i]);
+
+			double normalized_output = 0.0;
+
+			if (i < actuator_motors_s::NUM_CONTROLS) {
+				const float control = _latest_actuator_motors.control[i];
+
+				if (std::isfinite(control)) {
+					normalized_output = std::clamp(static_cast<double>(control), 0.0, 1.0);
+				}
+			}
+
+			actuator_norm_message.set_normalized(i, normalized_output);
 		}
 
 		if (_actuators_pub.Valid()) {
-			return _actuators_pub.Publish(rotor_velocity_message);
+			const bool raw_published = _actuators_pub.Publish(rotor_velocity_message);
+
+			if (_actuator_motors_norm_pub.Valid()) {
+				_actuator_motors_norm_pub.Publish(actuator_norm_message);
+			}
+
+			return raw_published;
 		}
 	}
 
@@ -95,6 +144,7 @@ bool GZMixingInterfaceESC::updateOutputs(bool stop_motors, uint16_t outputs[MAX_
 void GZMixingInterfaceESC::Run()
 {
 	pthread_mutex_lock(&_node_mutex);
+	_actuator_motors_sub.update(&_latest_actuator_motors);
 	_mixing_output.update();
 	_mixing_output.updateSubscriptions(false);
 	pthread_mutex_unlock(&_node_mutex);
