@@ -45,6 +45,16 @@ else()
         GstCameraSystem.cpp
     )
 
+    # macOS clang: don't fail on warnings from GStreamer/gz third-party headers
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wno-error)
+
+    # GStreamer libs aren't in the default linker search path on macOS (Homebrew Cellar);
+    # pass pkg-config's -L dirs explicitly (Linux finds them in /usr/lib without this).
+    target_link_directories(${PROJECT_NAME} PRIVATE
+        ${GSTREAMER_LIBRARY_DIRS}
+        ${GSTREAMER_APP_LIBRARY_DIRS}
+    )
+
     target_link_libraries(${PROJECT_NAME}
         PUBLIC px4_gz_msgs
         PUBLIC ${GZ_SENSORS_TARGET}

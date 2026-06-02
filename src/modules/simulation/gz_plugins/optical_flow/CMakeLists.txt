@@ -44,6 +44,9 @@ add_library(${PROJECT_NAME} SHARED
     OpticalFlowSystem.cpp
 )
 
+# macOS clang: don't fail this gz plugin on non-critical warnings (e.g. unused-private-field)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wno-error)
+
 target_link_libraries(${PROJECT_NAME}
     PUBLIC px4_gz_msgs
     PUBLIC ${GZ_SENSORS_TARGET}

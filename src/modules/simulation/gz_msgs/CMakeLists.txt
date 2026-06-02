@@ -24,6 +24,10 @@ if (Protobuf_FOUND)
             ${Protobuf_INCLUDE_DIRS}
     )
     target_link_libraries(px4_gz_msgs PUBLIC ${PROTOBUF_LIBRARIES})
+    # Homebrew protobuf/abseil headers require C++17 (macOS build fix)
+    target_compile_features(px4_gz_msgs PUBLIC cxx_std_17)
+    # Generated protobuf + Homebrew abseil headers trip PX4's -Werror (e.g. -Wdouble-promotion); don't fail on third-party warnings
+    target_compile_options(px4_gz_msgs PRIVATE -Wno-error)
     if (Protobuf_VERSION VERSION_LESS "3.8")
         target_compile_options(px4_gz_msgs PRIVATE -Wno-error=float-equal)
     endif()

@@ -51,6 +51,10 @@ if (gz-transport_FOUND)
 		MAIN gz_bridge
 		COMPILE_FLAGS
 			${MAX_CUSTOM_OPT_LEVEL}
+			# macOS build: newer Homebrew gz/protobuf APIs trip PX4's -Werror (deprecated Resize, float->double promotion)
+			-Wno-error=double-promotion
+			-Wno-error=deprecated-declarations
+			-Wno-error=float-conversion
 		SRCS
 			GZBridge.cpp
 			GZBridge.hpp

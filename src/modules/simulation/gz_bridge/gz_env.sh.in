@@ -19,3 +19,8 @@ export PX4_GZ_SERVER_CONFIG=@PX4_SOURCE_DIR@/src/modules/simulation/gz_bridge/se
 export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$PX4_GZ_MODELS:$PX4_GZ_WORLDS
 export GZ_SIM_SYSTEM_PLUGIN_PATH=$GZ_SIM_SYSTEM_PLUGIN_PATH:$PX4_GZ_PLUGINS
 export GZ_SIM_SERVER_CONFIG_PATH=$PX4_GZ_SERVER_CONFIG
+
+# macOS: the GstCamera plugin runs gst_init() at load. Do the GStreamer plugin-registry
+# scan in-process (no forked gst-plugin-scanner) — avoids the slow scan + GObject-introspection
+# warnings that otherwise push gz world-init past PX4's startup timeout.
+export GST_REGISTRY_FORK=no
