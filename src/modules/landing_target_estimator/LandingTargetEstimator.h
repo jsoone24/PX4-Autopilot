@@ -90,8 +90,13 @@ protected:
 	 */
 	void _update_params();
 
-	/* timeout after which filter is reset if target not seen */
-	static constexpr uint32_t landing_target_estimator_TIMEOUT_US = 2000000;
+	/* timeout after which filter is reset if target not seen.
+	 * Raised from 2 s to 5 s: with several camera-based precision landings running at once the
+	 * per-drone vision detector delivers frames less evenly under render/CPU load, so the marker
+	 * can be unseen for a few seconds at a time even while the drone sits centred over the pad.
+	 * At 2 s those gaps tripped "Lost sight of Marker" -> PrecLand search -> fallback -> off-pad
+	 * touchdown; 5 s bridges the gaps so the centred estimate is kept and the drone lands on the tag. */
+	static constexpr uint32_t landing_target_estimator_TIMEOUT_US = 5000000;
 
 	uORB::Publication<landing_target_pose_s> _targetPosePub{ORB_ID(landing_target_pose)};
 	landing_target_pose_s _target_pose{};
