@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# @name Gazebo AirPost slung-load drone
+#
+# @type Quadrotor
+#
+PX4_SIM_MODEL=${PX4_SIM_MODEL:=airpost_slung_drone}
+. ${R}etc/init.d-posix/airframes/4001_gz_x500
