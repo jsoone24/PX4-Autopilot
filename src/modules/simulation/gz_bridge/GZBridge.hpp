@@ -136,6 +136,8 @@ private:
 
 	static float generate_wgn();
 
+	hrt_abstime worldTimeUs() const { return _world_time_us; }
+
 	void addGpsNoise(double &latitude, double &longitude, double &altitude,
 			 float &vel_north, float &vel_east, float &vel_down);
 
@@ -170,6 +172,7 @@ private:
 	matrix::Vector3d _velocity_prev{};
 	matrix::Vector3f _euler_prev{};
 	hrt_abstime _timestamp_prev{};
+	hrt_abstime _world_time_us{};
 
 	const std::string _world_name;
 	const std::string _model_name;

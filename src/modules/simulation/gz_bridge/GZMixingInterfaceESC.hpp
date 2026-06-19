@@ -35,10 +35,14 @@
 
 #include <lib/mixer_module/mixer_module.hpp>
 
+#include <functional>
+
 #include <gz/msgs.hh>
 #include <gz/transport.hh>
 
+#include <uORB/Subscription.hpp>
 #include <uORB/PublicationMulti.hpp>
+#include <uORB/topics/actuator_motors.h>
 #include <uORB/topics/esc_status.h>
 
 
@@ -62,6 +66,11 @@ public:
 
 	bool init(const std::string &model_name);
 
+	void setWorldTimeProvider(std::function<uint64_t()> provider)
+	{
+		_world_time_provider = provider;
+	}
+
 	void stop()
 	{
 		_mixing_output.unregister();
@@ -81,7 +90,11 @@ private:
 	MixingOutput _mixing_output{"SIM_GZ_EC", MAX_ACTUATORS, *this, MixingOutput::SchedulingPolicy::Auto, false, false};
 
 	gz::transport::Node::Publisher _actuators_pub;
+	gz::transport::Node::Publisher _actuator_motors_norm_pub;
+	std::function<uint64_t()> _world_time_provider;
 
 	uORB::Publication<esc_status_s> _esc_status_pub{ORB_ID(esc_status)};
+	uORB::Subscription _actuator_motors_sub{ORB_ID(actuator_motors)};
+	actuator_motors_s _latest_actuator_motors{};
 
 };

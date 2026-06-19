@@ -117,8 +117,8 @@ bool GZMixingInterfaceServo::init(const std::string &model_name)
 			return false;
 		}
 
-		double min_val = get_servo_angle_min(i);
-		double max_val = get_servo_angle_max(i);
+		const double min_val = static_cast<double>(get_servo_angle_min(i));
+		const double max_val = static_cast<double>(get_servo_angle_max(i));
 		_angle_min_rad.push_back(min_val);
 		_angular_range_rad.push_back(max_val - min_val);
 	}
@@ -142,8 +142,9 @@ bool GZMixingInterfaceServo::updateOutputs(uint16_t outputs[MAX_ACTUATORS], unsi
 		if (_mixing_output.isFunctionSet(i)) {
 			gz::msgs::Double servo_output;
 
-			double output_range = _mixing_output.maxValue(i) - _mixing_output.minValue(i);
-			double output = _angle_min_rad[i] + _angular_range_rad[i] * (outputs[i] - _mixing_output.minValue(i)) / output_range;
+			const double output_min = static_cast<double>(_mixing_output.minValue(i));
+			const double output_range = static_cast<double>(_mixing_output.maxValue(i)) - output_min;
+			const double output = _angle_min_rad[i] + _angular_range_rad[i] * (static_cast<double>(outputs[i]) - output_min) / output_range;
 			// std::cout << "outputs[" << i << "]: " << outputs[i] << std::endl;
 			// std::cout << "  output: " << output << std::endl;
 			servo_output.set_data(output);

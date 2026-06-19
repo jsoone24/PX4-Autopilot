@@ -133,6 +133,8 @@ int GZBridge::init()
 	}
 
 	// ESC mixing interface
+	_mixing_interface_esc.setWorldTimeProvider([this]() { return this->worldTimeUs(); });
+
 	if (!_mixing_interface_esc.init(_model_name)) {
 		PX4_ERR("failed to init ESC output");
 		return PX4_ERROR;
@@ -334,6 +336,8 @@ void GZBridge::clockCallback(const gz::msgs::Clock &msg)
 	struct timespec ts;
 	ts.tv_sec = msg.sim().sec();
 	ts.tv_nsec = msg.sim().nsec();
+
+	_world_time_us = static_cast<hrt_abstime>(ts.tv_sec) * 1000000ULL + static_cast<hrt_abstime>(ts.tv_nsec / 1000ULL);
 
 	if (!_realtime_clock_set) {
 		// Set initial real time clock at startup
