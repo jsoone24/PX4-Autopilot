@@ -33,6 +33,7 @@
 
 if(CONFIG_LIB_TFLM)
 	px4_add_git_submodule(TARGET git_tflite-micro PATH tflite_micro)
+	find_program(TFLM_MAKE_PROGRAM NAMES gmake make REQUIRED)
 
 	set(TFLITE_DOWNLOADS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tflite_micro/tensorflow/lite/micro/tools/make/downloads)
 
@@ -79,7 +80,7 @@ if(CONFIG_LIB_TFLM)
 			${CMAKE_CURRENT_SOURCE_DIR}/generate_cc_arrays.py
 			${CMAKE_CURRENT_SOURCE_DIR}/tflite_micro/tensorflow/lite/micro/tools/generate_cc_arrays.py
 		# TODO maybe change this if building for other architectures
-		COMMAND make -f tensorflow/lite/micro/tools/make/Makefile MICRO_LITE_EXAMPLE_TESTS= MICRO_LITE_BENCHMARKS= MICRO_LITE_TEST_SRCS= MICRO_LITE_INTEGRATION_TESTS= third_party_downloads
+		COMMAND ${TFLM_MAKE_PROGRAM} -f tensorflow/lite/micro/tools/make/Makefile MICRO_LITE_EXAMPLE_TESTS= MICRO_LITE_BENCHMARKS= MICRO_LITE_TEST_SRCS= MICRO_LITE_INTEGRATION_TESTS= third_party_downloads
 		# Create timestamp file to mark completion
 		COMMAND ${CMAKE_COMMAND} -E touch ${TFLM_BUILD_TIMESTAMP}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tflite_micro

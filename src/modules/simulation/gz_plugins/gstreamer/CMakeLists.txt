@@ -41,6 +41,17 @@ pkg_check_modules(GSTREAMER_APP gstreamer-app-1.0)
 if (NOT GSTREAMER_FOUND OR NOT GSTREAMER_APP_FOUND)
     message(WARNING "GStreamer and Gstreamer App are required to build this plugin.")
 else()
+    set(GSTREAMER_LINK_LIBRARIES ${GSTREAMER_LIBRARIES} ${GSTREAMER_APP_LIBRARIES})
+    list(REMOVE_DUPLICATES GSTREAMER_LINK_LIBRARIES)
+
+    set(GSTREAMER_LINK_FLAGS ${GSTREAMER_LDFLAGS_OTHER} ${GSTREAMER_APP_LDFLAGS_OTHER})
+
+    foreach(gstreamer_library_dir ${GSTREAMER_LIBRARY_DIRS} ${GSTREAMER_APP_LIBRARY_DIRS})
+        list(APPEND GSTREAMER_LINK_FLAGS "-L${gstreamer_library_dir}")
+    endforeach()
+
+    list(REMOVE_DUPLICATES GSTREAMER_LINK_FLAGS)
+
     add_library(${PROJECT_NAME} SHARED
         GstCameraSystem.cpp
     )
@@ -51,8 +62,8 @@ else()
         PUBLIC ${GZ_PLUGIN_TARGET}
         PUBLIC ${GZ_SIM_TARGET}
         PUBLIC ${GZ_TRANSPORT_TARGET}
-        PUBLIC ${GSTREAMER_LIBRARIES}
-        PUBLIC ${GSTREAMER_APP_LIBRARIES}
+        PRIVATE ${GSTREAMER_LINK_FLAGS}
+        PRIVATE ${GSTREAMER_LINK_LIBRARIES}
     )
 
     target_include_directories(${PROJECT_NAME}

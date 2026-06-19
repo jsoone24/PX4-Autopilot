@@ -162,7 +162,13 @@ else
 
 endif
 
-# Pick up specific Python path if set
+# Pick up specific Python path if set, or use the repo-local venv if present.
+ifndef PYTHON_EXECUTABLE
+ifneq ($(wildcard $(SRC_DIR)/.venv/bin/python),)
+	PYTHON_EXECUTABLE := $(SRC_DIR)/.venv/bin/python
+endif
+endif
+
 ifdef PYTHON_EXECUTABLE
 	override CMAKE_ARGS += -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
 endif

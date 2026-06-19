@@ -62,4 +62,8 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC px4_gz_msgs
 )
 
+set_property(TARGET ${PROJECT_NAME}
+    APPEND PROPERTY BUILD_RPATH ${OpticalFlow_LIBRARY_DIR}
+)
+
 add_dependencies(${PROJECT_NAME} OpticalFlow)

@@ -35,13 +35,15 @@ include(ExternalProject)
 find_package(OpenCV REQUIRED)
 
 if(NOT TARGET OpticalFlow)
+    set(OpticalFlow_LIBRARY ${CMAKE_BINARY_DIR}/OpticalFlow/install/lib/${CMAKE_SHARED_LIBRARY_PREFIX}OpticalFlow${CMAKE_SHARED_LIBRARY_SUFFIX})
+
     ExternalProject_Add(OpticalFlow
         GIT_REPOSITORY https://github.com/PX4/PX4-OpticalFlow.git
         GIT_TAG master
         PREFIX ${CMAKE_BINARY_DIR}/OpticalFlow
         INSTALL_DIR ${CMAKE_BINARY_DIR}/OpticalFlow/install
         CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/OpticalFlow/install/lib/libOpticalFlow.so
+        BUILD_BYPRODUCTS ${OpticalFlow_LIBRARY}
         UPDATE_DISCONNECTED ON
         BUILD_ALWAYS OFF
         STEP_TARGETS build
@@ -49,5 +51,6 @@ if(NOT TARGET OpticalFlow)
 
     ExternalProject_Get_Property(OpticalFlow install_dir)
     set(OpticalFlow_INCLUDE_DIRS ${install_dir}/include CACHE INTERNAL "")
-    set(OpticalFlow_LIBS ${install_dir}/lib/libOpticalFlow.so CACHE INTERNAL "")
+    set(OpticalFlow_LIBRARY_DIR ${install_dir}/lib CACHE INTERNAL "")
+    set(OpticalFlow_LIBS ${OpticalFlow_LIBRARY} CACHE INTERNAL "")
 endif()
