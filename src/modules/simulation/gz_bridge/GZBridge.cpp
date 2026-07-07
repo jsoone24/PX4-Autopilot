@@ -152,7 +152,7 @@ int GZBridge::init()
 		return PX4_ERROR;
 	}
 
-	_mixing_interface_esc.setWorldTimeProvider([this]() { return this->world_time_us(); });
+	_mixing_interface_esc.setWorldTimeProvider([]() { return hrt_absolute_time(); });
 
 	if (!_mixing_interface_esc.init(_model_name)) {
 		PX4_ERR("failed to init ESC output");
